@@ -14,13 +14,15 @@ app.post("/signup", async (req, res) => {
   try {
     //get all the data from frontend
     const { firstname, lastname, email, password } = req.body;
+    console.log(req.body);
+    console.log(firstname, lastname, email, password);
 
     //check all the data should exist
-    // if (!firstname && !lastname && !email && !password) {
-    //   return res.status(400).send("please enter all required fields!");
-    // }
+    if (!firstname && !lastname && !email && !password) {
+      return res.status(400).send("please enter all required fields!");
+    }
     //check if the user already exist or not
-    const isUserExist = await User.findOne(email);
+    const isUserExist = await User.findOne({ email });
     if (isUserExist) {
       return res.status(200).send("user with this email already exist");
     }
