@@ -54,5 +54,49 @@ const registerUser = async (req, res) => {
     console.log("Error :" + error.message);
   }
 };
+const logInUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log(email, password);
+    const validator = new Validator();
+    const { inputValidation, getUser } = validator;
+    const { isInputValid, msg: inputValidationMessage } = inputValidation({
+      email,
+      password,
+    });
+    console.log(isInputValid);
+    if (!isInputValid) {
+      return res.status(400).json({ msg: inputValidationMessage });
+    }
+    //check if user exist or not
+    const { userData, isNewUserEntry, msg } = await getUser(email, {
+      attempt: "logIn",
+    });
+    if (isNewUserEntry) {
+      return res.status(400).json({ msg });
+    }
 
-module.exports = { registerUser };
+    //compare database password and input password
+    const isPasswordValid = bcrypt.compareSync(
+      password.toString(),
+      userData.password.toString()
+    );
+    if (!isPasswordValid) {
+      return res.status(400).json({ msg: "invalid password" });
+    }
+    //create token
+    const token = jwt.sign({ id: User._id, email }, process.env.SECRET_KEY, {
+      expiresIn: "1h",
+    });
+    userData.token = token;
+    userData.password = undefined;
+    return res.status(200).json({
+      userData,
+      msg: "login successful",
+      accessToken: token,
+    });
+  } catch (error) {
+    console.log("Error :" + error);
+  }
+};
+module.exports = { registerUser, logInUser };
