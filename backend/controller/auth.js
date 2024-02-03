@@ -1,6 +1,7 @@
 var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 const User = require("../model/user");
+const { Validator } = require("../helper/Validator");
 
 const registerUser = async (req, res) => {
   try {
@@ -10,13 +11,23 @@ const registerUser = async (req, res) => {
     console.log(firstname, lastname, email, password);
 
     //check all the data should exist
-    if (!firstname && !lastname && !email && !password) {
-      return res.status(400).send("please enter all required fields!");
+
+    const validator = new Validator();
+    const { getUser, inputValidation } = validator;
+    const { isInputValid, msg: inputValidationMsg } = inputValidation({
+      firstname,
+      lastname,
+      email,
+      password,
+    });
+    if (!isInputValid) {
+      return res.status(400).json({ msg: inputValidationMsg });
     }
     //check if the user already exist or not
-    const isUserExist = await User.findOne({ email });
-    if (isUserExist) {
-      return res.status(200).send("user with this email already exist");
+
+    const { isNewUserEntry, msg } = await getUser(email, { attempt: "signUp" });
+    if (!isNewUserEntry) {
+      return res.status(400).json({ msg });
     }
 
     //encrypt the user password
