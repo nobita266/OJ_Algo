@@ -2,6 +2,7 @@ var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 const User = require("../model/user");
 const { Validator } = require("../helper/Validator");
+const cookieParser = require("cookie-parser");
 
 const registerUser = async (req, res) => {
   try {
@@ -57,14 +58,14 @@ const registerUser = async (req, res) => {
 const logInUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(email, password);
+
     const validator = new Validator();
     const { inputValidation, getUser } = validator;
     const { isInputValid, msg: inputValidationMessage } = inputValidation({
       email,
       password,
     });
-    console.log(isInputValid);
+
     if (!isInputValid) {
       return res.status(400).json({ msg: inputValidationMessage });
     }
@@ -85,18 +86,29 @@ const logInUser = async (req, res) => {
       return res.status(400).json({ msg: "invalid password" });
     }
     //create token
-    const token = jwt.sign({ id: User._id, email }, process.env.SECRET_KEY, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: userData._id, email },
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "1h",
+      }
+    );
+    //store cookies into the browser
+    const options = {
+      expiresIn: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+      httpOnly: true, //only manipulated by server not by the client
+    };
+
+    //send the token
     userData.token = token;
     userData.password = undefined;
-    return res.status(200).json({
+    return res.status(200).cookie("token", token, options).json({
       userData,
-      msg: "login successful",
+      msg: "You have login successful",
       accessToken: token,
     });
   } catch (error) {
-    console.log("Error :" + error);
+    console.log("Error :" + error.message);
   }
 };
 module.exports = { registerUser, logInUser };
