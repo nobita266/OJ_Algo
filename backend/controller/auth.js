@@ -7,20 +7,19 @@ const cookieParser = require("cookie-parser");
 const registerUser = async (req, res) => {
   try {
     //get all the data from frontend
-    const { firstname, lastname, email, password } = req.body;
-    console.log(req.body);
-    console.log(firstname, lastname, email, password);
+    const { firstName, lastName, email, password } = req.body;
 
     //check all the data should exist
 
     const validator = new Validator();
     const { getUser, inputValidation } = validator;
     const { isInputValid, msg: inputValidationMsg } = inputValidation({
-      firstname,
-      lastname,
+      firstName,
+      lastName,
       email,
       password,
     });
+    console.log(isInputValid);
     if (!isInputValid) {
       return res.status(400).json({ msg: inputValidationMsg });
     }
@@ -36,8 +35,8 @@ const registerUser = async (req, res) => {
 
     // save the user data into db
     const userData = await User.create({
-      firstname,
-      lastname,
+      firstname: firstName,
+      lastname: lastName,
       email,
       password: hashPassword,
     });

@@ -6,6 +6,9 @@ class Validator {
   validator() {}
   inputValidation(inputs) {
     const arrayOfInputs = Object.keys(inputs);
+    console.log("in vlidator");
+    console.log(inputs);
+
     for (let i = 0; i < arrayOfInputs.length; i++) {
       const inputKey = arrayOfInputs[i];
       const input = inputs[inputKey];
