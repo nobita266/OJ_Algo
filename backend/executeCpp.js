@@ -9,8 +9,8 @@ if (!fs.existsSync(outputPath)) {
 }
 const executeCpp = (filepath) => {
   const jobId = path.basename(filepath).split(".")[0];
-  const outPath = path.join(outputPath, `${jobId}.exe`).replace(/\\/g, "/");
-  console.log(filepath, outPath, jobId);
+  const outPath = path.join(outputPath, `${jobId}.exe`);
+  // console.log(outPath, filepath);
   return new Promise((resolve, reject) => {
     // exec(
     //   `g++ ${filepath} -o ${outPath} && cd ${outputPath} && ./${jobId}.exe`,
@@ -18,22 +18,23 @@ const executeCpp = (filepath) => {
     //     error && reject({ error, stderr });
     //     stderr && reject(stderr);
     //     resolve(stdout);
-    exec(
-      `g++ ${quotedFilepath} -o ${outPath} && cd ${outputPath} && ./${jobId}.exe`,
-      (error, stdout, stderr) => {
-        if (error) {
-          reject({ error, stderr });
-          return;
-        }
-
-        if (stderr) {
-          reject(stderr);
-          return;
-        }
-
-        resolve(stdout);
+    let z = `g++ ${filepath} -o ${outPath} ;
+     cd ${outputPath} ;
+      ./${jobId}.exe`;
+    console.log(z);
+    exec(z, (error, stdout, stderr) => {
+      if (error) {
+        reject({ error, stderr });
+        return;
       }
-    );
+
+      if (stderr) {
+        reject(stderr);
+        return;
+      }
+
+      resolve(stdout);
+    });
   });
 };
 

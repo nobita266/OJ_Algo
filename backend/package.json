@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "server": "nodemon index.js"
+    "server": "nodemon index.js",
+    "start": "node index.js",
+    "build": "npm install"
   },
   "author": "yaman saini",
   "license": "ISC",

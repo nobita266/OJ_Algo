@@ -1,6 +1,6 @@
 var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
-const User = require("../model/user");
+const User = require("../model/User");
 const { Validator } = require("../helper/Validator");
 const cookieParser = require("cookie-parser");
 
