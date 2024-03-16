@@ -10,6 +10,7 @@ const { default: mongoose } = require("mongoose");
 const { executeCpp } = require("./executeCpp");
 const Problem = require("./model/Problem");
 const { executePy } = require("./executePy");
+const { generateInputFile } = require("./generateInputFile");
 
 //middlewares
 
@@ -24,25 +25,29 @@ const routes = express.Router();
 app.use(routes);
 DBConnection();
 app.use("/api/auth", authRoutes);
+app.use("/", authRoutes);
 
 app.post("/run", async (req, res) => {
-  const { language, code } = req.body;
+  const { language, code, input } = req.body;
+  console.log(req.body);
   if (code === undefined) {
     return res.status(400).json({ success: false, error: "empty code body" });
   }
-  console.log(language, code);
+
   try {
     // need to generate a c++ file with content from the request
     const filepath = await generateFile(language, code);
-    console.log(language);
+    // console.log(language);
+    const inputPath = await generateInputFile(input);
+    console.log("inputPath", inputPath);
 
     //we need to run the file and send the respose
     if (language === "cpp") {
-      const output = await executeCpp(filepath);
+      const output = await executeCpp(filepath, inputPath);
       return res.status(200).json({ filepath, output });
     } else {
-      const output = await executePy(filepath);
-      return res.status(200).json({ filepath, output });
+      const output = await executePy(filepath, inputPath);
+      return res.status(200).json(output);
     }
   } catch (err) {
     return res.status(500).json({ err });
@@ -73,7 +78,7 @@ app.get("/problems/:problemNumber", async (req, res) => {
   try {
     const problem = await Problem.findOne({ problemNumber });
     if (!problem) {
-      return res.status(404).json({ error: "Problem not found" });
+      return res.status(400).json({ error: "Problem not found" });
     }
     res.status(200).json(problem);
   } catch (err) {
@@ -81,6 +86,24 @@ app.get("/problems/:problemNumber", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+//delete problem from the database
+app.delete("/problems/:_id", async (req, res) => {
+  // console.log(req.params);
+  const { _id } = req.params;
+  try {
+    const deletedProblem = await Problem.findByIdAndDelete(_id);
+    if (!deletedProblem) {
+      return res.status(404).json({ error: "Problem not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "Problem deleted successfully", deletedProblem });
+  } catch (err) {
+    console.error("Error deleting problem:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.listen(8000, () => {
   console.log("server listen in 8080");
 });

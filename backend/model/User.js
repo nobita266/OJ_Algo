@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  solvedProblem: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "SolvedProblem" },
+  ],
 });
 
-module.exports = mongoose.model("user", userSchema);
+module.exports = mongoose.model("User", userSchema);

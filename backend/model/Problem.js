@@ -33,6 +33,12 @@ const problemSchema = new Schema({
     type: String,
     required: true,
   },
+  testCases: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TestCase",
+    },
+  ],
 });
 
 const Problem = mongoose.model("Problem", problemSchema);
