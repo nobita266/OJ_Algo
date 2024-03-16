@@ -11,6 +11,11 @@ const { executeCpp } = require("./executeCpp");
 const Problem = require("./model/Problem");
 const { executePy } = require("./executePy");
 const { generateInputFile } = require("./generateInputFile");
+const User = require("./model/User");
+const SolvedProblem = require("./model/solvedProblem");
+const { verifyToken } = require("./middleware/verifyToken");
+const TestCase = require("./model/TestCase");
+const axios = require("axios");
 
 //middlewares
 
@@ -25,10 +30,11 @@ const routes = express.Router();
 app.use(routes);
 DBConnection();
 app.use("/api/auth", authRoutes);
-app.use("/", authRoutes);
 
 app.post("/run", async (req, res) => {
+  console.log("i m in run api");
   const { language, code, input } = req.body;
+
   console.log(req.body);
   if (code === undefined) {
     return res.status(400).json({ success: false, error: "empty code body" });
@@ -37,7 +43,7 @@ app.post("/run", async (req, res) => {
   try {
     // need to generate a c++ file with content from the request
     const filepath = await generateFile(language, code);
-    // console.log(language);
+    //generate input text file
     const inputPath = await generateInputFile(input);
     console.log("inputPath", inputPath);
 
@@ -101,6 +107,83 @@ app.delete("/problems/:_id", async (req, res) => {
   } catch (err) {
     console.error("Error deleting problem:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/codeSubmit", verifyToken, async (req, res) => {
+  try {
+    const { code, language, problemId } = req.body;
+    // Get user ID from verified token
+    const userId = req.userId;
+
+    // Get problem details including test cases from problemId
+    const problem = await Problem.findById(problemId);
+
+    // Iterate over test cases
+    let testResults = [];
+    for (const testCaseId of problem.testCases) {
+      // Make a POST request to the /run endpoint with code, language, and input
+      const testCase = await TestCase.findById(testCaseId);
+      console.log(testCase);
+      const { data } = await axios.post("http://localhost:8000/run", {
+        language,
+        code,
+        input: testCase.testInput,
+      });
+      console.log(data);
+
+      // Compare output with expected output
+      const passed = data.output === testCase.expectedOutput;
+      const result = {
+        input: testCase.testInput,
+        expectedOutput: testCase.expectedOutput,
+        actualOutput: data.output,
+        passed: passed,
+      };
+
+      testResults.push(result);
+
+      // If test case failed, stop further execution
+      if (!passed) break;
+    }
+    if (testResults[testResults.length - 1].passed) {
+      const userDetails = await User.findById(userId);
+
+      userDetails.solvedProblem.push(problemId);
+      await userDetails.save();
+      res
+        .status(200)
+        .json({ msg: "successfully paassed all problems", testResults });
+    }
+    // Send test results to client
+    res.status(200).json({
+      msg: "failed at this testcase",
+      yourOutput: testResults[testResults.length - 1],
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+//adding testcases
+app.post("/addTestcases", async (req, res) => {
+  const { problemId, testInput, expectedOutput } = req.body;
+  try {
+    const testCase = new TestCase({
+      problemId,
+      testInput,
+      expectedOutput,
+    });
+    await testCase.save();
+    const problem = await Problem.findById(problemId);
+    console.log(problem);
+    if (!problem) {
+      res.status(400).json({ msg: "problemId not found or problem not exist" });
+    }
+    problem.testCases.push(testCase);
+    await problem.save();
+    return res.status(200).json({ msg: "testcase successfully added" });
+  } catch (error) {
+    res.status(500).json({ msg: error.message });
   }
 });
 

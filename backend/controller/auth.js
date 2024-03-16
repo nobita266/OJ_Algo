@@ -1,8 +1,8 @@
+const express = require("express");
 var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 const User = require("../model/User");
 const { Validator } = require("../helper/Validator");
-const cookieParser = require("cookie-parser");
 
 const registerUser = async (req, res) => {
   try {
@@ -47,6 +47,7 @@ const registerUser = async (req, res) => {
     });
     userData.token = token;
     userData.password = undefined;
+
     res.status(200).json({
       message: "You have successfully registered!",
     });
@@ -101,6 +102,7 @@ const logInUser = async (req, res) => {
     //send the token
     userData.token = token;
     userData.password = undefined;
+
     return res.status(200).cookie("token", token, options).json({
       userData,
       msg: "You have login successful",
