@@ -59,7 +59,7 @@ app.post("/run", async (req, res) => {
     return res.status(500).json({ err });
   }
 });
-//get all problems
+//create problem
 app.post("/problems", async (req, res) => {
   try {
     const problem = await Problem.create(req.body);
@@ -79,12 +79,13 @@ app.get("/problems", async (req, res) => {
   }
 });
 // Get a single problem by problemNumber
-app.get("/problems/:problemNumber", async (req, res) => {
-  const { problemNumber } = req.params;
+app.get("/problems/:problemId", async (req, res) => {
+  const { problemId } = req.params;
+  const _id = problemId;
   try {
-    const problem = await Problem.findOne({ problemNumber });
+    const problem = await Problem.findById({ _id });
     if (!problem) {
-      return res.status(400).json({ error: "Problem not found" });
+      return res.status(404).json({ error: "Problem not found" });
     }
     res.status(200).json(problem);
   } catch (err) {
@@ -92,6 +93,7 @@ app.get("/problems/:problemNumber", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 //delete problem from the database
 app.delete("/problems/:_id", async (req, res) => {
   // console.log(req.params);
@@ -119,10 +121,8 @@ app.post("/codeSubmit", verifyToken, async (req, res) => {
     // Get problem details including test cases from problemId
     const problem = await Problem.findById(problemId);
 
-    // Iterate over test cases
     let testResults = [];
     for (const testCaseId of problem.testCases) {
-      // Make a POST request to the /run endpoint with code, language, and input
       const testCase = await TestCase.findById(testCaseId);
       console.log(testCase);
       const { data } = await axios.post("http://localhost:8000/run", {
@@ -149,14 +149,30 @@ app.post("/codeSubmit", verifyToken, async (req, res) => {
     if (testResults[testResults.length - 1].passed) {
       const userDetails = await User.findById(userId);
 
-      userDetails.solvedProblem.push(problemId);
+      const solvedProblem = userDetails.solvedProblem;
+      if (solvedProblem.indexOf(problemId) < 0) {
+        solvedProblem.push(problemId);
+      }
       await userDetails.save();
+      let solvedCode = await SolvedProblem.findOne({ userId, problemId });
+      if (solvedCode) {
+        solvedCode.code = code;
+        solvedCode.language = language;
+      } else {
+        solvedCode = new SolvedProblem({
+          userId,
+          problemId,
+          code,
+          language,
+        });
+      }
+      await solvedCode.save();
       res
         .status(200)
         .json({ msg: "successfully paassed all problems", testResults });
     }
     // Send test results to client
-    res.status(200).json({
+    res.status(400).json({
       msg: "failed at this testcase",
       yourOutput: testResults[testResults.length - 1],
     });
@@ -181,12 +197,21 @@ app.post("/addTestcases", async (req, res) => {
     }
     problem.testCases.push(testCase);
     await problem.save();
+
     return res.status(200).json({ msg: "testcase successfully added" });
   } catch (error) {
     res.status(500).json({ msg: error.message });
   }
 });
-
+//fetch all user to show on the profile page
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({});
+    return res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ msg: "error in fetching details" });
+  }
+});
 app.listen(8000, () => {
   console.log("server listen in 8080");
 });
