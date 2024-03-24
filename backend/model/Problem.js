@@ -39,6 +39,9 @@ const problemSchema = new Schema({
       ref: "TestCase",
     },
   ],
+  problemType: {
+    type: String,
+  },
 });
 
 const Problem = mongoose.model("Problem", problemSchema);
