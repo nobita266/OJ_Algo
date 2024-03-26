@@ -146,13 +146,16 @@ app.post("/codeSubmit", verifyToken, async (req, res) => {
       // If test case failed, stop further execution
       if (!passed) break;
     }
+
     if (testResults[testResults.length - 1].passed) {
       const userDetails = await User.findById(userId);
 
       const solvedProblem = userDetails.solvedProblem;
+      console.log(solvedProblem);
       if (solvedProblem.indexOf(problemId) < 0) {
         solvedProblem.push(problemId);
       }
+
       await userDetails.save();
       let solvedCode = await SolvedProblem.findOne({ userId, problemId });
       if (solvedCode) {
