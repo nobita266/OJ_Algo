@@ -49,6 +49,7 @@ const registerUser = async (req, res) => {
     userData.password = undefined;
 
     res.status(200).json({
+      accessToken: token,
       message: "You have successfully registered!",
     });
   } catch (error) {

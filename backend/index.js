@@ -125,7 +125,7 @@ app.post("/codeSubmit", verifyToken, async (req, res) => {
     for (const testCaseId of problem.testCases) {
       const testCase = await TestCase.findById(testCaseId);
       console.log(testCase);
-      const { data } = await axios.post("http://localhost:8000/run", {
+      const { data } = await axios.post("https://oj-algo.onrender.com/run", {
         language,
         code,
         input: testCase.testInput,
