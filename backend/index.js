@@ -125,7 +125,7 @@ app.post("/codeSubmit", verifyToken, async (req, res) => {
     for (const testCaseId of problem.testCases) {
       const testCase = await TestCase.findById(testCaseId);
       console.log(testCase);
-      const { data } = await axios.post("https://oj-algo.onrender.com/run", {
+      const { data } = await axios.post("http://localhost:8000/run", {
         language,
         code,
         input: testCase.testInput,
@@ -172,14 +172,16 @@ app.post("/codeSubmit", verifyToken, async (req, res) => {
       await solvedCode.save();
       res
         .status(200)
-        .json({ msg: "successfully paassed all problems", testResults });
+        .json({ msg: "successfully passed all problems", testResults });
+    } else {
+      // If test case failed, send failure response
+      res.status(400).json({
+        msg: "failed at this testcase",
+        yourOutput: testResults[testResults.length - 1],
+      });
     }
-    // Send test results to client
-    res.status(400).json({
-      msg: "failed at this testcase",
-      yourOutput: testResults[testResults.length - 1],
-    });
   } catch (error) {
+    // Send error response
     return res.status(500).json({ error: error.message });
   }
 });
